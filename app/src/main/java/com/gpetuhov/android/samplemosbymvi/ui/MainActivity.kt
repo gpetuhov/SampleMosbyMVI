@@ -11,6 +11,8 @@ import com.jakewharton.rxbinding3.view.clicks
 import com.pawegio.kandroid.toast
 import kotlinx.android.synthetic.main.activity_main.*
 
+// Dividing all the logic into layers keeps MainActivity as simple as this.
+
 class MainActivity : MviActivity<MainView, MainPresenter>(), MainView {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,6 +27,8 @@ class MainActivity : MviActivity<MainView, MainPresenter>(), MainView {
     override fun loadTextIntent2() = loadTextButton2.clicks()
 
     override fun render(state: MainViewState) {
+        // Rendering the state is just updating visibility of the widgets and showing results
+
         progress1.visibility = if (state.loadingText1) View.VISIBLE else View.GONE
         text1.visibility = if (state.loadingText1) View.GONE else View.VISIBLE
         text1.text = state.text1

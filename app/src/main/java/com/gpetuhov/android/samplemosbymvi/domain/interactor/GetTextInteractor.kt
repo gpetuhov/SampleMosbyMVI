@@ -9,6 +9,10 @@ import io.reactivex.Observable
 // In a Production app, this should be injected instead of using singleton.
 object GetTextInteractor {
 
+    // Note that here interactor does NOT return ViewState directly.
+    // Instead PartialState is returned, which reflects changes
+    // of the loading process of the first or second text.
+
     fun getText1(): Observable<MainPartialState> {
         return Repository.loadText1()
             .map<MainPartialState> { MainPartialState.FirstTextLoaded(it.text) }
