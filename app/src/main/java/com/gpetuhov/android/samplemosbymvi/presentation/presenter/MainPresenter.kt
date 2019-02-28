@@ -20,13 +20,17 @@ class MainPresenter : MviBasePresenter<MainView, MainViewState>() {
             .switchMap { GetTextInteractor.getText1() }
             .observeOn(AndroidSchedulers.mainThread())
 
-        // TODO: listen to second user intent
+        val secondText: Observable<MainPartialState> = intent(MainView::loadTextIntent2)
+            .subscribeOn(Schedulers.io())
+            .debounce(400, TimeUnit.MILLISECONDS)
+            .switchMap { GetTextInteractor.getText2() }
+            .observeOn(AndroidSchedulers.mainThread())
 
-        // TODO: merge intent streams into one
+        val allIntents = Observable.merge(firstText, secondText)
 
         val initialState = MainViewState(false, false, "", false, false, "")
 
-        val stateObservable = firstText.scan(initialState, ::viewStateReducer)
+        val stateObservable = allIntents.scan(initialState, ::viewStateReducer)
 
         subscribeViewState(stateObservable, MainView::render)
     }
@@ -34,8 +38,6 @@ class MainPresenter : MviBasePresenter<MainView, MainViewState>() {
     private fun viewStateReducer(previousState: MainViewState, changes: MainPartialState): MainViewState {
         // This creates a COPY of previous state
         val previousStateBuilder = previousState.builder()
-
-        // TODO: add second text states
 
         return when(changes) {
             is MainPartialState.FirstTextLoading -> {
@@ -59,6 +61,30 @@ class MainPresenter : MviBasePresenter<MainView, MainViewState>() {
                     .firstTextLoading(false)
                     .firstTextLoadingError(true)
                     .firstText("")
+                    .build()
+            }
+
+            is MainPartialState.SecondTextLoading -> {
+                previousStateBuilder
+                    .secondTextLoading(true)
+                    .secondTextLoadingError(false)
+                    .secondText("")
+                    .build()
+            }
+
+            is MainPartialState.SecondTextLoaded -> {
+                previousStateBuilder
+                    .secondTextLoading(false)
+                    .secondTextLoadingError(false)
+                    .secondText(changes.text)
+                    .build()
+            }
+
+            is MainPartialState.SecondTextError -> {
+                previousStateBuilder
+                    .secondTextLoading(false)
+                    .secondTextLoadingError(true)
+                    .secondText("")
                     .build()
             }
         }

@@ -9,12 +9,17 @@ import io.reactivex.Observable
 // In a Production app, this should be injected instead of using singleton.
 object GetTextInteractor {
 
-    // TODO: add getText2()
-
     fun getText1(): Observable<MainPartialState> {
         return Repository.loadText1()
             .map<MainPartialState> { MainPartialState.FirstTextLoaded(it.text) }
             .startWith(MainPartialState.FirstTextLoading)
             .onErrorReturn { MainPartialState.FirstTextError }
+    }
+
+    fun getText2(): Observable<MainPartialState> {
+        return Repository.loadText2()
+            .map<MainPartialState> { MainPartialState.SecondTextLoaded(it.text) }
+            .startWith(MainPartialState.SecondTextLoading)
+            .onErrorReturn { MainPartialState.SecondTextError }
     }
 }
