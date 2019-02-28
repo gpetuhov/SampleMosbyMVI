@@ -1,6 +1,7 @@
 package com.gpetuhov.android.samplemosbymvi.presentation.presenter
 
 import com.gpetuhov.android.samplemosbymvi.domain.interactor.GetTextInteractor
+import com.gpetuhov.android.samplemosbymvi.domain.viewstate.MainPartialState
 import com.gpetuhov.android.samplemosbymvi.domain.viewstate.MainViewState
 import com.gpetuhov.android.samplemosbymvi.presentation.view.MainView
 import com.hannesdorfmann.mosby3.mvi.MviBasePresenter
@@ -13,7 +14,7 @@ class MainPresenter : MviBasePresenter<MainView, MainViewState>() {
 
     override fun bindIntents() {
 
-        val mainViewState: Observable<MainViewState> = intent(MainView::loadTextIntent1)
+        val firstText: Observable<MainPartialState> = intent(MainView::loadTextIntent1)
             .subscribeOn(Schedulers.io())
             .debounce(400, TimeUnit.MILLISECONDS)
             .switchMap { GetTextInteractor.getText1() }
@@ -21,8 +22,45 @@ class MainPresenter : MviBasePresenter<MainView, MainViewState>() {
 
         // TODO: listen to second user intent
 
-        // TODO: add State Reducer
+        // TODO: merge intent streams into one
 
-        subscribeViewState(mainViewState, MainView::render)
+        val initialState = MainViewState(false, false, "", false, false, "")
+
+        val stateObservable = firstText.scan(initialState, ::viewStateReducer)
+
+        subscribeViewState(stateObservable, MainView::render)
+    }
+
+    private fun viewStateReducer(previousState: MainViewState, changes: MainPartialState): MainViewState {
+        // This creates a COPY of previous state
+        val previousStateBuilder = previousState.builder()
+
+        // TODO: add second text states
+
+        return when(changes) {
+            is MainPartialState.FirstTextLoading -> {
+                previousStateBuilder
+                    .firstTextLoading(true)
+                    .firstTextLoadingError(false)
+                    .firstText("")
+                    .build()
+            }
+
+            is MainPartialState.FirstTextLoaded -> {
+                previousStateBuilder
+                    .firstTextLoading(false)
+                    .firstTextLoadingError(false)
+                    .firstText(changes.text)
+                    .build()
+            }
+
+            is MainPartialState.FirstTextError -> {
+                previousStateBuilder
+                    .firstTextLoading(false)
+                    .firstTextLoadingError(true)
+                    .firstText("")
+                    .build()
+            }
+        }
     }
 }
