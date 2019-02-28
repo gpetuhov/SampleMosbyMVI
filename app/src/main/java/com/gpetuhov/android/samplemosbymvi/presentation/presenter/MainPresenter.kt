@@ -16,6 +16,11 @@ import java.util.concurrent.TimeUnit
 // which generates new ViewState based on the previous ViewState and the received partial state.
 // New ViewState is generated each time a partial state is emitted in the merged stream of partial states.
 
+// Different presenters (in this example we have only one) must NOT communicate with each other directly!
+// If one presenter has to trigger some action in the other, it should be done
+// by subscribing both presenters to the same ViewState
+// (so that, updating it from one presenter will trigger actions in the other).
+
 class MainPresenter : MviBasePresenter<MainView, MainViewState>() {
 
     override fun bindIntents() {
@@ -36,6 +41,9 @@ class MainPresenter : MviBasePresenter<MainView, MainViewState>() {
             .switchMap { GetTextInteractor.getText2() }
             .observeOn(AndroidSchedulers.mainThread())
 
+        // We can log user intents like this
+        // .doOnNext(intent -> Crashlytics.log("Intent: load first text"))
+
         // Merge partial streams for both texts into one
         val allIntents = Observable.merge(firstText, secondText)
 
@@ -47,6 +55,11 @@ class MainPresenter : MviBasePresenter<MainView, MainViewState>() {
         // Each time partial state is emitted, it is fed into State Reducer,
         // which generates new ViewState based on the previous state and partial state received.
         val stateObservable = allIntents.scan(initialState, ::viewStateReducer)
+
+        // We can log states like this
+        // .doOnNext(newViewState -> Crashlytics.log( "State: "+gson.toJson(newViewState) ))
+        // Logging intents and states simplifies debugging in case of crash
+        // (as we now can reproduce user actions and app states).
 
         // Subscribe View to the stream of ViewStates
         subscribeViewState(stateObservable, MainView::render)
